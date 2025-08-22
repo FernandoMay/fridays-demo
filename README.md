@@ -20,9 +20,158 @@ This repository uses the recommended structure for a Soroban project:
 - Contracts should have their own `Cargo.toml` files that rely on the top-level `Cargo.toml` workspace for their dependencies.
 - Frontend libraries can be added to the top-level directory as well. If you initialized this project with a frontend template via `--frontend-template` you will have those files already included.
 
-Perfecto 🚀 Te preparo un **README.md** que puedes usar directamente en tu repo de GitHub para el workshop. Está escrito como guía paso a paso para los participantes.
+# 🚀 Workshop: Desplegando tu Primer Smart Contract en Stellar (Soroban)
+
+Bienvenido a este taller práctico donde aprenderás a **escribir, desplegar e interactuar** con un contrato inteligente en la **red de pruebas de Stellar** usando **Soroban**.
 
 ---
+
+## 🎯 Objetivos
+
+Al finalizar este workshop podrás:
+
+* Comprender los fundamentos de Stellar y Soroban.
+* Configurar tu entorno de desarrollo local.
+* Escribir un contrato inteligente simple en Rust.
+* Desplegarlo en la testnet de Stellar.
+* Interactuar con tu contrato usando la Soroban CLI.
+
+---
+
+## 🛠 Prerrequisitos
+
+Antes de comenzar, asegúrate de tener instalado:
+
+* [Rust](https://www.rust-lang.org/tools/install)
+* Soroban CLI:
+
+  ```bash
+  cargo install --locked soroban-cli
+  ```
+* Una cuenta en testnet (fúndela con [Friendbot](https://laboratory.stellar.org/#account-creator))
+
+👉 Si no puedes instalar localmente, también puedes usar **Docker o GitHub Codespaces** (el instructor lo proporcionará).
+
+---
+
+## 📂 Configuración del Proyecto
+
+1. **Crea un nuevo proyecto de contrato**:
+
+   ```bash
+   cargo new fridays_demo --lib
+   cd fridays_demo
+   ```
+
+2. **Actualiza tu `Cargo.toml`**:
+
+   ```toml
+   [dependencies]
+   soroban-sdk = "21.0.0-rc1" # ajusta a la versión más reciente
+   ```
+
+3. **Escribe el contrato** (`src/lib.rs`):
+
+   ```rust
+   #![no_std]
+   use soroban_sdk::{contract, contractimpl, Env, Symbol};
+
+   #[contract]
+   pub struct CounterContract;
+
+   #[contractimpl]
+   impl CounterContract {
+       pub fn increment(env: Env) -> u32 {
+           let key = Symbol::short("count");
+           let mut count: u32 = env.storage().persistent().get(&key).unwrap_or(0);
+           count += 1;
+           env.storage().persistent().set(&key, &count);
+           count
+       }
+
+       pub fn get(env: Env) -> u32 {
+           let key = Symbol::short("count");
+           env.storage().persistent().get(&key).unwrap_or(0)
+       }
+   }
+   ```
+
+4. **Compila el contrato**:
+
+   ```bash
+   cargo build --target wasm32-unknown-unknown --release
+   ```
+
+   El archivo compilado estará en:
+
+   ```
+   target/wasm32-unknown-unknown/release/fridays_demo.wasm
+   ```
+
+---
+
+## 🚀 Desplegar el Contrato
+
+1. **Genera un par de llaves**:
+
+   ```bash
+   soroban keys generate --network testnet demo
+   ```
+
+2. **Fondea tu cuenta** usando Friendbot:
+   Abre [Friendbot](https://laboratory.stellar.org/#account-creator) y pega tu clave pública.
+
+3. **Despliega el contrato**:
+
+   ```bash
+   soroban contract deploy \
+     --wasm target/wasm32-unknown-unknown/release/fridays_demo.wasm \
+     --source demo \
+     --network testnet
+   ```
+
+   ➝ Esto te devolverá un **contract ID** (guárdalo).
+
+---
+
+## 🔄 Interactuar con el Contrato
+
+### Incrementar el contador:
+
+```bash
+soroban contract invoke \
+  --id <contract_id> \
+  --fn increment \
+  --source demo \
+  --network testnet
+```
+
+### Consultar el valor del contador:
+
+```bash
+soroban contract invoke \
+  --id <contract_id> \
+  --fn get \
+  --network testnet
+```
+
+Cada vez que ejecutes `increment`, el valor del contador aumentará.
+
+---
+
+## ✅ Próximos Pasos
+
+* Extiende tu contrato con más funciones.
+* Construye un contrato de token o NFT.
+* Conéctalo con una app frontend (React / Flutter).
+* Explora la documentación oficial: [Soroban Docs](https://soroban.stellar.org/docs).
+
+---
+
+## 🙌 Créditos
+
+Este workshop fue diseñado para darte una **primera experiencia fluida** con Soroban y los contratos inteligentes en Stellar.
+
 
 # 🚀 Workshop: Deploying Your First Stellar Smart Contract (Soroban)
 
@@ -175,7 +324,3 @@ You should see the counter increase each time you run `increment`.
 ## 🙌 Credits
 
 This workshop was designed to give you a **smooth first experience** with Soroban and Stellar smart contracts.
-
----
-
-Would you like me to also **add some ready-made funded testnet accounts + .env example file** in the README so participants don’t get stuck waiting on Friendbot?
